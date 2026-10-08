@@ -1,3 +1,4 @@
+%ignore this script! 
 %AWT_Control_Integrated allows you to specify and change the wind tunnel
 %velocity and saves the flow information
 %   INPUTS:
