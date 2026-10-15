@@ -1,4 +1,4 @@
-% Function to turn on Wind Tunnel 
+% Function to turn on Wind Tunnel - currently just copied straight from Code 1 AWTcontrol
 
 function AWT_Control_on
 % 
