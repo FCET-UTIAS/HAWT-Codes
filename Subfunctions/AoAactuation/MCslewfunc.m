@@ -3,7 +3,7 @@ function MCslewfunc(angle,dir)
 % Test MC motor if it is connected and functioning
 
 %% Load which direction the slew drive was moved. Correct for backlash if necessary
-oldDir=cd("I:\ExCamp1\Subfunctions\AoAactuation");
+oldDir=cd("F:\ExCamp2\Subfunctions\AoAactuation");
 structdir=load('premove.mat'); 
 cd(oldDir)
 
@@ -23,26 +23,14 @@ elseif strcmp(dir,'+')
 end
 
 
-% pause(10);
+
 res=1.8/40/44/4; % deg/steps
 
 if premove==dir
     stepNum=angle/res;
-else
-    %stepNum=(angle+0.376)/res; May 2023
-    %stepNum=(angle+0.75)/res;
-    stepNum=(angle+1.25)/res;
-%{
-elseif premove=='-'
-    stepNum=(angle+0.16)/res;
-    %stepNum=(angle+0.376)/res;
-    %stepNum=(angle+0)/res;
-elseif premove=='+'
-    stepNum=(angle+0.16)/res;
-    stepNum=(angle-0.16)/res;
-    %stepNum=(angle-0.376)/res;
-    %stepNum=(angle-0)/res;
-%}
+
+else %if previous direction does not match current direction
+    stepNum=(angle+0.5)/res;
 end
 
 motorNum=1;
@@ -68,7 +56,7 @@ disp('== Program completion')
 
 premove=dir;
 
-oldDir=cd("I:\ExCamp1\Subfunctions\AoAactuation");
+oldDir=cd("F:\ExCamp2\Subfunctions\AoAactuation");
 save('premove.mat','premove')
 cd(oldDir)
 end
