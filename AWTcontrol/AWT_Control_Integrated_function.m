@@ -1,4 +1,4 @@
-function status = AWT_Control_Integrated_func(speed_target, P_atm_in, T, v_fs_offset_initial, VelocityType)
+function status = AWT_Control_Integrated_function(speed_target, P_atm_in, T, v_fs_offset_initial, VelocityType)
 
 %---------------------------------------------------------------------------
 % Function to set and verify the Wind Tunnel speed
