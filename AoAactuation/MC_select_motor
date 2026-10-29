@@ -1,0 +1,87 @@
+function MC_select_motor(s_port, selection, On_Off)
+ 
+%---------------------------------------------------------------------------
+% Function to select or unselect a motor on the control box
+% Description: Selects (or unselects) the motor requested by the user by
+% setting the address bits (2 and 3, with bit 4 low and bit 5 high), then
+% setting bit 1 low to select or high to unselect, and finally executing
+% the selection with bit 7. A selection other than 1 to 4 does nothing
+% except send the execute commands. Select a motor before moving it with
+% MC_move_stepper.
+%
+% INPUTS: s_port    - serial port for the motor control box
+%         selection - motor to control: 1 (Motor 1), 2 (Motor 2),
+%                     3 (Motor 3) or 4 (Motor 4)
+%         On_Off    - turn the motor on (1) or off (0)
+% OUTPUTS: N/A
+%
+% HISTORY: 
+%   Modified from the example of Philippe Lavoie 25-05-2005, 
+%   by Ronald Hanson 01-15-09
+% 
+%---------------------------------------------------------------------------
+ 
+%% Main Code
+
+fprintf(s_port, '/B 0') 
+
+if selection==1
+    %%% Select motor 1 %%%
+    fprintf(s_port, '/b 2')
+    fprintf(s_port, '/b 3')
+    fprintf(s_port, '/b 4')
+    fprintf(s_port, 'b 5')
+    if On_Off == 1
+        fprintf(s_port, '/b 1') % Select
+    else
+        fprintf(s_port, 'b 1')  % Unselect
+    end
+end
+
+if selection==2
+    %%% Select motor 2 %%%
+    fprintf(s_port, 'b 2')
+    fprintf(s_port, '/b 3')
+    fprintf(s_port, '/b 4')
+    fprintf(s_port, 'b 5')
+    if On_Off == 1
+        fprintf(s_port, '/b 1') % Select
+    else
+        fprintf(s_port, 'b 1')  % Unselect
+    end
+end
+
+if selection==3
+    %%% Select motor 3 %%%
+    fprintf(s_port, '/b 2')
+    fprintf(s_port, 'b 3')
+    fprintf(s_port, '/b 4')
+    fprintf(s_port, 'b 5')
+    if On_Off == 1
+        fprintf(s_port, '/b 1') % Select
+    else
+        fprintf(s_port, 'b 1')  % Unselect
+    end
+end
+
+if selection==4
+    %%% Select motor 4 %%%
+    fprintf(s_port, 'b 2')
+    fprintf(s_port, 'b 3')
+    fprintf(s_port, '/b 4')
+    fprintf(s_port, 'b 5')
+    if On_Off == 1
+        fprintf(s_port, '/b 1') % Select
+    else
+        fprintf(s_port, 'b 1')  % Unselect
+    end
+end
+    
+% Execute selection
+fprintf(s_port, '/b 7')
+fprintf(s_port, 'b 7')
+    
+    
+fprintf(s_port, 'B 7')
+fprintf(s_port, 'B 1')
+fprintf(s_port, '/B 0')
