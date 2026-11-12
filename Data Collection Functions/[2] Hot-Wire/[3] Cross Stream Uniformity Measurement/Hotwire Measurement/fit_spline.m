@@ -1,0 +1,29 @@
+function [SPLINE] = fit_spline(U, E)
+
+% This script fits a cubic spline to the hot-wire data provided by
+% E and U.
+
+% NOTE: The spline may be read by using the ppval function, 
+%           e.g. U_hw = ppval(SPLINE, E_hw)
+
+% R. Jason Hearst
+% September 16, 2011
+
+% Create polynomial fit
+SPLINE = spline(E, U);
+
+% Plot fit for visual inspection
+E_plot = linspace(min(E), max(E), 100);
+U_plot = ppval(SPLINE, E_plot);
+
+close all;
+
+figure;
+plot(U, E, 'ob', U_plot, E_plot, '-r');
+legend('data points', 'cubic spline fit', 'Location', 'SouthEast');
+xl = xlabel('$U_p$');
+yl = ylabel('$E_{U,corr}$');
+set(xl,'unit','character');
+set(xl,'interpreter','latex');
+set(yl,'unit','character');
+set(yl,'interpreter','latex');
