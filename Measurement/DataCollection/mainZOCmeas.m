@@ -3,16 +3,16 @@
 % 4. Compare the result to show the curves match
 clc;
 clear all
-close all
+%lose all
 
 %%
 driveName=pwd;
 driveName=driveName(1);
-addpath(genpath(strcat(driveName,':\ExCamp1\CalibrationData'))) % Add all relevant folders
-addpath(genpath(strcat(driveName,':\ExCamp1\ConfigurationData')))
-addpath(genpath(strcat(driveName,':\ExCamp1\Subfunctions')))
-addpath(genpath(strcat(driveName,':\ExCamp1\AWTcontrol')))
-addpath(genpath(strcat(driveName,':\ExCamp1\ValidationData\LinArray\Uinf')))
+addpath(genpath(strcat(driveName,':\ExCamp2\CalibrationData'))) % Add all relevant folders
+addpath(genpath(strcat(driveName,':\ExCamp2\ConfigurationData')))
+addpath(genpath(strcat(driveName,':\ExCamp2\Subfunctions')))
+addpath(genpath(strcat(driveName,':\ExCamp2\AWTcontrol')))
+%addpath(genpath(strcat(driveName,':\ExCamp2\ValidationData\LinArray\Uinf')))
 
 ShapeConfig=input('Enter the ice shape configuration [C, GS, GR1, GR2, GR3]: ','s');
 
@@ -20,12 +20,9 @@ AoAtype=input('Choose between geometric or effective AoA (geometric/effective): 
 CpConfig=input('Choose the ZOC configuration [Standard]: ','s'); %Standard always? 
 
 pause(1)
-ReVec=[1.043544]*10^6;
 
-AoAvec= [0]; %[0 1 1.5 2 2.5 3 3.5 4 4.5 5 5.5 6 6.5 7 7.5 8 8.5 9 9.5 10 11 12 13 14 15];
-
-% potentially run this alfa sweep in chunks to identify where is the stall
-% angle
+ReVec=[1]*10^6;
+AoAvec= [0];
 
 TempCelcOnline=input('Input the current temperature from Pearson in Celcius.');
 PresKPascOnline=input('Input the current atmospheric pressure in kPa.');
@@ -38,16 +35,17 @@ pause(0.5)
 input('Hit enter to continue.');
 pause(0.5)
 
-TripStatus="Trip220-10%";
+TripStatus="Glaze";  %="Trip220-10%";
 
 input('Confirm that the AoA is zero on the turn table.')
+input('Confirm that the pressure source is on.')
 
 % Baratron calibration
 BaratronChoice=input('Choose if offset correction of Baratron is necessary [Y/N]','s');
 if strcmp(BaratronChoice,'N')
     disp('Choose the calibration constant ...')
     pause(0.5)
-    OldPath=cd(strcat(driveName,':\ExCamp1\CalibrationData\BaratronCalibration'));
+    OldPath=cd(strcat(driveName,':\ExCamp2\CalibrationData\BaratronCalibration'));
     BaratronCalibrationFileName=uigetfile;
     BaratronOffset=load(BaratronCalibrationFileName);
     cd(OldPath);
@@ -56,7 +54,7 @@ elseif strcmp(BaratronChoice,'Y')
     [v_fs_offset,fs_Baratron,ts_Baratron,T,PT_e]=BaratronCalibration;
     BaratronOffset=v_fs_offset;
     disp('Done. Saving the result ...')
-    OldPath=cd(strcat(driveName,':\ExCamp1\CalibrationData\BaratronCalibration'));
+    OldPath=cd(strcat(driveName,':\ExCamp2\CalibrationData\BaratronCalibration'));
     data_time=datestr(now,'mm-dd-yyyy_HH-MM');
     save(strcat('BaratronCalibration_', data_time,".mat"),"date_time","");
     cd(OldPath);
@@ -96,13 +94,12 @@ ZOCconfig=funcZOCconfigurationDefinition(CpConfig);
 
 %% Zero the ZOC
 disp("Zeroing the ZOC...")
-%[v_offset,ZOCzeroCalibrationFileName]=ZOCcalibration(TempCelcOnline,PresKPascOnline);
 [read_back_bias, Volt_bias, time_ZOC_bias, Volt_bias_mean, Volt_std_bias, serialnums] = ZOC_quick_scan_2(f_sZOC,time_per_sensor_in_a_loop,no_of_loops);
 Volt_bias_mean(:,1)=Volt_bias_mean(:,1);
 Volt_bias_mean(:,2)=Volt_bias_mean(:,2);
 Volt_bias_mean(:,3)=Volt_bias_mean(:,3);
 
-addpath(strcat(driveName,":\ExCamp1\Subfunctions\ZOC\NRC_ZOCs_Cal_files\CAL_files_gains_only"));
+addpath(strcat(driveName,":\ExCamp2\Subfunctions\ZOC\NRC_ZOCs_Cal_files\CAL_files_gains_only"));
 load("M270_gain.mat");
 load("M273_gain.mat");
 load("M275_gain.mat");
@@ -114,10 +111,11 @@ disp("Zeroing finished.")
 AWT_Control_on
 start_date_time = datestr(now,'mm-dd-yyyy_HH-MM');
 for AoAind=1:length(AoAvec)
+    start_date_time = datestr(now,'mm-dd-yyyy_HH-MM');
     if AoAind~=1
         % Change the AoA
         disp(strcat('Actuating the AoA to ',num2str(AoAvec(AoAind)),'deg'))
-        MCslewfunc(AoAvec(AoAind)-AoAvec(AoAind-1),'+')
+        MCslewfunc(abs(AoAvec(AoAind))-abs(AoAvec(AoAind-1)),'-')
     elseif AoAvec(AoAind)~=0
         if AoAvec(AoAind)>0
             MCslewfunc(AoAvec(AoAind),'+')
@@ -147,30 +145,13 @@ for AoAind=1:length(AoAvec)
         N=no_of_loops*time_per_sensor_in_a_loop*f_sZOC;
 
         [read_back, Volt, time_ZOC, Volt_mean, Volt_std, serialnums] = ZOC_quick_scan_2(f_sZOC,time_per_sensor_in_a_loop,no_of_loops);
-%         Volt_mean(:,1)=Volt_mean(:,1);
-%         Volt_mean(:,2)=Volt_mean(:,2);
-%         Volt_mean(:,3)=Volt_mean(:,3);
-%         Volt_std(:,1)=Volt_std(:,1);
-%         Volt_std(:,2)=Volt_std(:,2);
-%         Volt_std(:,3)=Volt_std(:,3);
+        Volt_mean(:,1)=Volt_mean(:,1);
+        Volt_mean(:,2)=Volt_mean(:,2);
+        Volt_mean(:,3)=Volt_mean(:,3);
+        Volt_std(:,1)=Volt_std(:,1);
+        Volt_std(:,2)=Volt_std(:,2);
+        Volt_std(:,3)=Volt_std(:,3);
 
-        %Tap location modifications
-        %Volt_mean(1,1)=Volt_mean(25,1);
-        %Volt_std(1,1)=Volt_std(25,1);
-
-        %Module 270 Faulty channel corrections
-%         Volt_mean(1:7,1) = Volt_mean(1:7,1);
-%         Volt_mean(9:11,1) = Volt_mean(8:10, 1);
-%         Volt_mean(13:17,1) = Volt_mean(11:15,1); 
-%         Volt_mean(19:26,1) = Volt_mean(16:23,1); 
-%         Volt_std(1:7,1) = Volt_std(1:7,1);
-%         Volt_std(9:11,1) = Volt_std(8:10, 1);
-%         Volt_std(13:17,1) = Volt_std(11:15,1); 
-%         Volt_std(19:26,1) = Volt_std(16:23,1); 
-% 
-%         %Module 273 
-%         Volt_mean(1,2) = Volt_mean(25,1);
-%         Volt_std(1,2) = Volt_std(25,1);
 
         p_mean_psi=(Volt_mean-Volt_bias_mean).*ZOCsensitivity;
 
@@ -197,30 +178,36 @@ for AoAind=1:length(AoAvec)
         P_Pa.A.PrecisionUncertainty=PrecisionUncertaintyPa(ZOCconfig.A.PortID);
         P_Pa.B.PrecisionUncertainty=PrecisionUncertaintyPa(ZOCconfig.B.PortID);
         P_Pa.C.PrecisionUncertainty=PrecisionUncertaintyPa(ZOCconfig.C.PortID);
-
-        P_Pa.C.Pstatic = p_mean_Pa_temp(32);
-        P_Pa.C.Ptotal = p_mean_Pa_temp(31);
-
         
+
+        %% Troubleshooting snippet - July 14, 2026
+        
+        q_270 = p_mean_Pa_temp(31); %Ptotal from pitot tube connected to channel 31 of Module 270 (C series)
+        q_273 = p_mean_Pa_temp(31+32); %Ptotal from pitot tube connected to channel 31 of Module 273 (A series)
+        q_275 = p_mean_Pa_temp(32+64); %Ptotal from pitot tube connected to channel 32 of Module 275 (B series)
+        
+
            %% Plot the data
            close all
-           figure
+           figure()
             q=1/2*rhoAtm*Ufinal^2;
-           % q = 2100;
             hold on
-            plot(ZOCconfig.A.x_c,P_Pa.A.Pmean/q,'g-o', DisplayName='SS: 1-24');
-            plot(ZOCconfig.B.x_c,P_Pa.B.Pmean/q,'ro', DisplayName='TE: 25-29 & G1-G9');
-            plot(ZOCconfig.C.x_c,P_Pa.C.Pmean(1:23,:)/q,'k-o', DisplayName='PS: 30-52');
+            plot(ZOCconfig.A.x_c,(P_Pa.A.Pmean/q_273),'g-o', DisplayName='SS: 1-24');
+            plot(ZOCconfig.B.x_c(1:5,:),P_Pa.B.Pmean(1:5,:)/q_275,'ro', DisplayName='TE: 25-29'); % and G1-G9');
+            plot(ZOCconfig.C.x_c,(P_Pa.C.Pmean/q_270 ),'k-o', DisplayName='PS: 30-52');
             hold off
-            legend on;
+            legend('Interpreter', 'latex', 'FontSize', 12, 'Location', 'best');
+            title(strcat('AoA=',num2str(AoAvec(AoAind)),', Re=', num2str(ReTarget)));
+            grid on;
             set(gca,'Ydir','reverse')
             drawnow
 %%      
         
         % Save the data
-        oldPath=cd(strcat(driveName,":\ExCamp1\Data\Cp"));
-        %FileName=strcat('ZOC=',num2str(ReTarget),'_', ShapeConfig,'_AoA=',num2str(AoAevec(AoAind)),'(effective)_',CpConfig,'_',TripStatus,'_',start_date_time);
-        FileName=strcat('ZOC=',num2str(ReTarget),'_', ShapeConfig,'_AoA=5.271g','(effective)_',CpConfig,'_',TripStatus,'_',start_date_time);
+        oldPath=cd(strcat("F:\ExCamp2\Data\Cp\PMA_zeroFind"));
+        %FileName=strcat('ZOC=',num2str(ReTarget),'_', ShapeConfig,'_AoA=7ACTUALLY',num2str(AoAevec(AoAind)),'(',AoAtype,')_',CpConfig,'_',TripStatus,'_',start_date_time);
+        FileName=strcat('ZOC=',num2str(ReTarget),'_', ShapeConfig,'_AoA=',num2str(AoAevec(AoAind)),'(',AoAtype,')_',CpConfig,'_',TripStatus,'_',start_date_time);
+        %FileName=strcat('ZOC=',num2str(ReTarget),'_', ShapeConfig,'_AoA=-3.5g','(geom)_',CpConfig,'_',TripStatus,'_',start_date_time);
         save(strcat(FileName,'.mat'))
         figure(1)
         savefig(strcat(FileName,'.fig'))

@@ -1,0 +1,9 @@
+PIVdtCalculator
+
+if x_c=0.58
+    dtTE2=[5.25 6.5];
+elseif U==40
+    dtTE2=[6.5 7.5];
+elseif x_c==
+    dtTE2=[8.5 9.5];
+end

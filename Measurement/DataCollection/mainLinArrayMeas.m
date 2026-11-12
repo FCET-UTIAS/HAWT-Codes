@@ -1,16 +1,16 @@
 %% mainLinArrayMeas
 
-% clc;
-% clear all
-% close all
-% 
+clc;
+clear all
+%close all
+
 
 %% Input
-addpath(genpath('I:\ExCamp1\CalibrationData')) % Add all relevant folders
-addpath(genpath('I:\ExCamp1\Calibration'))
-addpath(genpath('I:\ExCamp1\ConfigurationData'))
-addpath(genpath('I:\ExCamp1\Subfunctions'))
-addpath(genpath('I:\ExCamp1\AWTcontrol'))
+addpath(genpath('F:\ExCamp2\CalibrationData')) % Add all relevant folders
+addpath(genpath('F:\ExCamp2\Calibration'))
+addpath(genpath('F:\ExCamp2\ConfigurationData'))
+addpath(genpath('F:\ExCamp2\Subfunctions'))
+addpath(genpath('F:\ExCamp2\AWTcontrol'))
 
 ShapeConfig=input('Enter the ice shape configuration [BG, C, GS, GR1, GR2, GR3]: ','s');
 
@@ -24,7 +24,7 @@ if strcmp(BGorModel,"Model")
     if strcmp(AoAtype,'effective')
         disp('Choose the input file ...')
         pause(1)
-        OldPath=cd('I:\ExCamp1\CalibrationData\AoAcorrection');
+        OldPath=cd('F:\ExCamp2\CalibrationData\AoAcorrection');
         uigetfile;
         cd(OldPath);
         clear OldPath
@@ -64,7 +64,7 @@ BaratronChoice=input('Choose if calibration of Baratron is necessary [Y/N]','s')
 if strcmp(BaratronChoice,'N')
     disp('Choose the calibration constant ...')
     %pause(0.5)
-    OldPath=cd('I:\ExCamp1\CalibrationData\BaratronCalibration');
+    OldPath=cd('F:\ExCamp2\CalibrationData\BaratronCalibration');
     BaratronCalibrationFileName=uigetfile;
     BaratronOffset=load(BaratronCalibrationFileName);
     cd(OldPath);
@@ -97,11 +97,11 @@ P_atm_mmHg = PresKPascOnline*1e3*0.0075;   % [from kPa to mmHg]
 [rhoAtm, muAtm, ~, ~] = fluid_prop(TempCelcOnline, P_atm_mmHg);
 nuAtm=muAtm/rhoAtm;
 if strcmp(VelocityType,'Uinf')
-    Utarget=[48.5];
+    Utarget=[32];
 elseif strcmp(VelocityType,'Re')
     ChordLength=12*0.0254; % Chord length is 12 inches
 
-    ReTarget=[1.043544]*10^6;
+    ReTarget=[0.60394]*10^6;%[0.60394, 0.8053, 1.0066]*10^6;
     Utarget=ReTarget; %*nuAtm/ChordLength;
 elseif strcmp(VelocityType,'Ma')
     fs_Baratron=4000;
@@ -132,7 +132,7 @@ MicDAQ_ID=funcLinearMicArrayConfigDefinition;
 disp("Run the wind tunnel for 3 minutes")
 AWT_Control_on % Turn on the wind tunnel control
 AWT_Control_setVref(8)
-pause(150)
+pause(120)
 AWT_Control_off(8)
 
 %% Loop through the conditions
@@ -205,7 +205,7 @@ for AoAind=1:length(AoAvec)
             % Find sensitivity
             serialNum=LinearMicInfo.serialNum(i);
             micType=LinearMicInfo.type(i);
-            oldPath=cd(strcat("I:\ExCamp1\CalibrationData\",micType,"sensitivity"));
+            oldPath=cd(strcat("F:\ExCamp2\CalibrationData\",micType,"sensitivity"));
             sensitivityFileName=ls(strcat(micType,"sensitivity",serialNum,"*.mat")); % The directory should only contain one file that matches this wild card.
             sensitivityMic=load(sensitivityFileName).sensitivityMic;
             sensitivityFileNameVec=[sensitivityFileNameVec, string(sensitivityFileName)];
@@ -222,21 +222,21 @@ for AoAind=1:length(AoAvec)
         % Save the data
         if strcmp(BGorModel,"Model")
             if strcmp(VelocityType,'Uinf')
-                OldPath=cd('I:\ExCamp1\Data\LinArray\Uinf');
+                OldPath=cd('F:\ExCamp2\Data\LinArray\Uinf');
                 if strcmp(AoAtype,'effective')
                     FileName=strcat('LinMicArray_',ShapeConfig,'_Uinf=',num2str(Utarget(Uind)),'_AoA=',num2str(AoAevec(AoAind)),'(effective)_',TripStatus,'_',start_date_time);
                 elseif strcmp(AoAtype,'geometric')
                     FileName=strcat('LinMicArray_',ShapeConfig,'_Uinf=',num2str(Utarget(Uind)),'_AoA=',num2str(AoAvec(AoAind)),'(geometric)_',TripStatus,'_',start_date_time);
                 end
             elseif strcmp(VelocityType,'Re')
-                OldPath=cd('I:\ExCamp1\Data\LinArray\Re');
+                OldPath=cd('F:\ExCamp2\Data\LinArray\Re');
                 if strcmp(AoAtype,'effective')
                     FileName=strcat('LinMicArray_',ShapeConfig,'_Re=',num2str(ReTarget(Uind)),'_AoA=',num2str(AoAevec(AoAind)),'(effective)_',TripStatus,'_',start_date_time);
                 elseif strcmp(AoAtype,'geometric')
                     FileName=strcat('LinMicArray_',ShapeConfig,'_Re=',num2str(ReTarget(Uind)),'_AoA=',num2str(AoAvec(AoAind)),'(geometric)_',TripStatus,'_',start_date_time);
                 end
             elseif strcmp(VelocityType,'Ma')
-                OldPath=cd('I:\ExCamp1\Data\LinArray\Ma');
+                OldPath=cd('F:\ExCamp2\Data\LinArray\Ma');
                 if strcmp(AoAtype,'effective')
                     FileName=strcat('LinMicArray_',ShapeConfig,'_Ma=',num2str(MaTarget(Uind)),'_AoA=',num2str(AoAevec(AoAind)),'(effective)_',TripStatus,'_',start_date_time);
                 elseif strcmp(AoAtype,'geometric')
@@ -245,13 +245,13 @@ for AoAind=1:length(AoAvec)
             end
         elseif strcmp(BGorModel,"BG")
             if strcmp(VelocityType,'Uinf')
-                OldPath=cd('I:\ExCamp1\Data\LinArray\Uinf');
+                OldPath=cd('F:\ExCamp2\Data\LinArray\Uinf');
                 FileName=strcat('LinMicArray_Uinf=',num2str(Utarget(Uind)),'_Background',start_date_time);
             elseif strcmp(VelocityType,'Re')
-                OldPath=cd('I:\ExCamp1\Data\LinArray\Re');
+                OldPath=cd('F:\ExCamp2\Data\LinArray\Re');
                 FileName=strcat('LinMicArray_Re=',num2str(ReTarget(Uind)),'_Background',start_date_time);
             elseif strcmp(VelocityType,'Ma')
-                OldPath=cd('I:\ExCamp1\Data\LinArray\Ma');
+                OldPath=cd('F:\ExCamp2\Data\LinArray\Ma');
                 FileName=strcat('LinMicArray_Ma=',num2str(MaTarget(Uind)),'_Background',start_date_time);
             end
         end

@@ -7,10 +7,10 @@ tic
 
 
 %% Input
-addpath(genpath('G:\ExCamp1\CalibrationData')) % Add all relevant folders
-addpath(genpath('G:\ExCamp1\ConfigurationData'))
-addpath(genpath('G:\ExCamp1\Subfunctions'))
-addpath(genpath('G:\ExCamp1\AWTcontrol'))
+addpath(genpath('F:\ExCamp2\CalibrationData')) % Add all relevant folders
+addpath(genpath('F:\ExCamp2\ConfigurationData'))
+addpath(genpath('F:\ExCamp2\Subfunctions'))
+addpath(genpath('F:\ExCamp2\AWTcontrol'))
 
 ShapeConfig=input('Enter the ice shape configuration [C, GS, GR1, GR2, GR3]: ','s');
 VelocityType=input('Choose from Uinf, Reynolds number or Mach number sweep (Uinf,Re,Ma)','s');
@@ -36,7 +36,7 @@ BaratronChoice=input('Choose if calibration of Baratron is necessary [Y/N]','s')
 if strcmp(BaratronChoice,'N')
     disp('Choose the calibration constant ...')
     pause(0.5)
-    OldPath=cd('G:\ExCamp1\CalibrationData\BaratronCalibration');
+    OldPath=cd('F:\ExCamp2\CalibrationData\BaratronCalibration');
     BaratronCalibrationFileName=uigetfile;
     BaratronOffset=load(BaratronCalibrationFileName);
     cd(OldPath);
@@ -54,7 +54,7 @@ BaratronRange=100;
 disp("Initializing...")
 % Sweep parameters
 
-AoAvec=[0 1 1.5 2 2.5 3 3.5 4 4.5 5 5.5 6 6.5 7 7.5 8 8.5 9 9.5 10 11 12 13 14 15];
+AoAvec=[0];
 
 R=287; % J/kg/K
 TempKelvinOnline=TempCelcOnline+273.16;
@@ -87,16 +87,6 @@ end
 
         f_s=65536;
         t_s=60;
-
-
-        %%
-        
-disp("Run the wind tunnel for 3 minutes")
-
-AWT_Control_on % Turn on the wind tunnel control
-AWT_Control_setVref(8)
-pause(3*60)
-AWT_Control_off(8)
 
 %% Loop through the conditions
 % Begin AoA loop
@@ -182,7 +172,7 @@ for AoAind=1:length(AoAvec)
         for i=1
             [PSDMic,F] = pwelch(data(:,i),hanning(Nwindow),Noverlap,Nfft,f_s,'PSD');
             % Find sensitivity
-            sensPath=cd("G:\ExCamp1\Subfunctions\PMA\Calibration");
+            sensPath=cd("F:\ExCamp2\Subfunctions\PMA\Calibration");
             sensFile=load("MicSensitivity.mat");
             cd(sensPath)
             sensitivityMic=sensFile.sens_mat(i);
