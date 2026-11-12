@@ -1,0 +1,39 @@
+Changes:
+Changes made between code folder "Code 1", this includes what from "Code 1" was removed, any name changes and what was included from "Code 2".
+
+Note: Code 1 is being used as the reference for the code as it is the more organized of the 2 codes.
+
+Name Changes from Code 1:
+
+  AWTControl:
+  AWT_Control_Integrated_func.m -> AWT_Control_Integrated_function.m
+  AWTSpeedMeasurementFunc.m -> AWT_Speed_Measurement_function.m
+
+  AoActuation:
+
+
+Code Not Carried Over from Code 1:
+
+  AWTControl:
+  Temp_on.m - not necessary code 
+
+  AoActuation:
+  N/A
+
+New Inclusion from Code 2:
+
+  AWTControl:
+  N/A
+
+  AoActuation:
+  move_spanwise_dir.m
+  move_streamwise_dir.m
+  move_wall_normal_dir.m 
+  open_traverse_talk.m -> same as MC_open_traverse_talk.m with different ports
+
+Major Changes or Differences in the Code:
+
+  AWTControl:
+  Changed the way AWT_Control_Integrated_func.m worked by combining the methods from both Code 1 and Code 2. 
+
+  AoActuation:
