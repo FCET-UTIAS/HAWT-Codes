@@ -1,6 +1,6 @@
-%Code snippet from Code 2 unified_data_acquisition (424 - 513)
-
 %---------------------------------------------------------------------------
+%Code snippet from Code 2 unified_data_acquisition (424 - 513)
+%
 % Section to measure and plot Cp with the ZOC pressure modules
 % Description: Code block from a larger data acquisition script, run when
 % the Cp flag is set. Scans the ZOC pressure modules, then calculates the
@@ -43,6 +43,8 @@
 %     cpfilecompare .mat      - comparison Cp (main_Cp, flap_Cp)
 %
 % HISTORY: 
+%        Reuben - Oct 2025 
+%.       Arshia Singh - Kept only the ME (main element) plotting code
 % 
 %---------------------------------------------------------------------------
 
@@ -71,68 +73,48 @@ disp(['M275 U = ', char(string(M275_U)), ' m/s']);
 % Organize pressure data by tap
 ME_idx_270 = [1:11 13:17 19:28]; 
 ME_idx_273 = 1:4; 
-FLAP_idx_275 = [1:10 12 14:17]; 
 
 ME_SPAN_idx_273 = [5:10 11:17]; 
 ME_SPAN_idx_270 = 2; 
-FLAP_SPAN_idx_273 = [18:23 25:27];
-FLAP_SPAN_idx_275 = 4; 
 
 % Initialize 
-ME_pmean = nan(33,1); ME_vmean = nan(33,1); 
-FLAP_pmean = nan(17,1); FLAP_vmean = nan(17,1); 
-ME_SPAN_pmean = nan(13,1); ME_SPAN_vmean = nan(13,1); 
-FLAP_SPAN_pmean = nan(9,1); FLAP_SPAN_vmean = nan(9,1); 
+ME_pmean = nan(33,1); ME_vmean = nan(33,1);
+ME_SPAN_pmean = nan(13,1); ME_SPAN_vmean = nan(13,1);
 
 % Assign pressure means to the correct tap positions
 ME_pmean(2:27,1) = p_mean(ME_idx_270,1); 
 ME_pmean([28 31:33],1) = p_mean(ME_idx_273,3); 
-FLAP_pmean(FLAP_idx_275,1) = p_mean(FLAP_idx_275,2); 
 ME_SPAN_pmean(:,1) = p_mean(ME_SPAN_idx_273,3); 
-% ME_SPAN_pmean(7,1) = p_mean(ME_SPAN_idx_270,1); 
-FLAP_SPAN_pmean([14:-1:9 6 5 3],1) = p_mean(FLAP_SPAN_idx_273,3); 
-FLAP_SPAN_pmean(8,1) = p_mean(FLAP_SPAN_idx_275, 2); 
 
 % Assign voltage means to the correct tap positions
 ME_vmean(2:27,1) = v_mean(ME_idx_270,1); 
 ME_vmean([28 31:33],1) = v_mean(ME_idx_273,3); 
-FLAP_vmean(FLAP_idx_275,1) = v_mean(FLAP_idx_275,2); 
 ME_SPAN_vmean([1:6 8:14],1) = v_mean(ME_SPAN_idx_273,3); 
 ME_SPAN_vmean(7,1) = v_mean(ME_SPAN_idx_270,1); 
-FLAP_SPAN_vmean([13:-1:8 6 5 3],1) = v_mean(FLAP_SPAN_idx_273,3); 
 
 % Process to Cp
 % U_PT_mps = U_zoc_check; 
 ME_Cp = ((ME_pmean).*6894.76)./(0.5*rho_air*(U_PT_mps^2)*cosd(30)); %convert psi to pa
-FLAP_Cp = ((FLAP_pmean).*6894.76)./(0.5*rho_air*(U_PT_mps^2)*cosd(30)); %convert psi to pa
 ME_SPAN_Cp = ((ME_SPAN_pmean).*6894.76)./(0.5*rho_air*(M273_U^2)*cosd(30)); %convert psi to pa
-FLAP_SPAN_Cp = ((FLAP_SPAN_pmean).*6894.76)./(0.5*rho_air*(M273_U^2)*cosd(30)); %convert psi to pa 
 
 % Plot Cp
 %import airfoil points
 dir = 'E:\Awt_Raymond\30p30n_cp\P_tap_points\Pressure_taps';
-[~, main, flap, main_span, flap_span] = import_P_tap_points_2015(dir);
+[~, main, flap, main_span, flap_span] = import_P_tap_points_2015(dir); % Check validity of these points now that flap was removed from plotting code
 c_inches = c_30P30N/0.0254; 
 main_x_norm = main(1:end-1,2)./c_inches; 
 flap_x_norm = flap.data(1:end-1,2)./c_inches; 
 
-f3 = figure(); a3 = gca; 
-% hold on 
+f3 = figure(); a3 = gca;
 scatter(main_x_norm, ME_Cp, 'red', 'MarkerFaceColor', 'white')
 set(gca, 'YDir','reverse')
 for n = 1:numel(main_x_norm) % Labels results with pressure tap number
     text(main_x_norm(n),ME_Cp(n),num2str(n))
 end
-hold on 
-scatter(flap_x_norm, FLAP_Cp, 'blue', 'MarkerFaceColor', 'white'); 
-hold off
-for n = 1:numel(flap_x_norm) % Labels results with pressure tap number
-    text(flap_x_norm(n),FLAP_Cp(n),num2str(n))
-end
 xlabel('$x/c$'); ylabel('$C_p$'); box on ; grid on ; ax = gca; ax.FontSize = 18; ax.LineWidth =1 ; 
+
 %Plot Comparison Cp
 load(cpfilecompare, 'flap_Cp', 'main_Cp'); 
 hold(a3,'on'); 
 scatter(main_x_norm, main_Cp, 'red', 'square', 'filled'); 
-scatter(flap_x_norm, flap_Cp, 'blue', 'square', 'filled'); 
 hold(a3, 'off'); 
