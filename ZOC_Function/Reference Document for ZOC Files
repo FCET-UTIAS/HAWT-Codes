@@ -4,3 +4,6 @@ Took ZOC scripts from Measurements and added headers for both scripts.
 Implemented name changes as well. 
 
 Code 2: 
+
+Took snippet from Code 2 unified_data_acquisition code and gave it a header and found all the functions used in the code snippet
+No code was removed for now as the plotting is not just repeated plotting blocks but the set up and calculations necessary to plot the data
