@@ -1,4 +1,4 @@
-function ZOCconfig = funcZOCconfigurationDefinition(config, xlsxFile)
+function ZOCconfig = ZOC_Configuration(config, xlsxFile)
 
 %---------------------------------------------------------------------------
 % Function to build the ZOC tap configuration from an Excel file
