@@ -40,7 +40,7 @@ function ZOCconfig = funcZOCconfigurationDefinition(config, xlsxFile)
 %---------------------------------------------------------------------------
 
 if nargin < 2
-    xlsxFile = 'Pressure tap locations_SO.xlsx';
+    xlsxFile = 'Pressure_tap_locations_SO_Dynamic.xlsx';
 end
 
 ModuleOrder = [270 273 275];   % order the modules are stacked in p_mean_Pa_temp
