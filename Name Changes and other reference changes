@@ -11,6 +11,10 @@ Name Changes from Code 1:
 
   AoActuation:
 
+  ZOC:
+  funcZOCConfigurationDefiniton -> ZOC_Configuration
+  mainZOCmeas -> ZOC_Measurement
+
 
 Code Not Carried Over from Code 1:
 
@@ -18,6 +22,9 @@ Code Not Carried Over from Code 1:
   Temp_on.m - not necessary code 
 
   AoActuation:
+  N/A
+
+  ZOC:
   N/A
 
 New Inclusion from Code 2:
@@ -31,9 +38,17 @@ New Inclusion from Code 2:
   move_wall_normal_dir.m 
   open_traverse_talk.m -> same as MC_open_traverse_talk.m with different ports
 
+  ZOC:
+  N/A
+
 Major Changes or Differences in the Code:
 
   AWTControl:
   Changed the way AWT_Control_Integrated_func.m worked by combining the methods from both Code 1 and Code 2. 
 
   AoActuation:
+  N/A
+
+  ZOC:
+  Implemented dynamic groups in excel through changes in ZOC_Configuration and ZOC_Measurement.
+  Implemented ZOC_zero_timer, plots for both pitot and contraction pressures.
