@@ -7,19 +7,19 @@ function ZOCconfig = funcZOCconfigurationDefinition(config, xlsxFile)
 % The number of groups, taps per group, and the modules used are all taken
 % from the Excel file, so groups can be added or removed without editing
 % this function. Several groups may share one ZOC module. Each tap row gives
-% its channel-tap mapping in the MODULE column as "module:channel" (e.g.
-% 273:25 = channel 25 of module 273). The ZOC scan returns the modules
-% stacked in the order of ModuleOrder below (270, 273, 275, 32 channels
+% its channel-tap mapping in the MODULE and CHANNEL columns (e.g. MODULE
+% 273, CHANNEL 25 = channel 25 of module 273). The ZOC scan returns the
+% modules stacked in the order of ModuleOrder below (270, 273, 275, 32 channels
 % each), so PortID = channel + 32*(module index - 1). Row order within a
 % group is the tap number of that group.
 %
 % EXCEL FORMAT: sheet name = config ("Standard", "Glaze-Probed", ...)
 %   Cell A1 "CHORD_MM", B1 chord length (mm). Header row on row 3, data
 %   from row 4. Headers (any order, found by name):
-%   GROUP#, X, Y, Z, DESCRIPTION, MODULE
-%   Separator in MODULE can be : - or _ (format the column as Text in Excel
-%   so 273:25 is not turned into a time). GROUP# may be left blank under the
-%   first row of a group (fill down). X, Y, Z in mm. DESCRIPTION is stored per group (first non-empty entry).
+%   GROUP#, X, Y, Z, DESCRIPTION, MODULE, CHANNEL
+%   MODULE (270, 273 or 275) and CHANNEL (1-32) are plain numbers. GROUP#
+%   may be left blank under the first row of a group (fill down).
+%   X, Y, Z in mm. DESCRIPTION is stored per group (first non-empty entry).
 %
 % INPUTS: config   - sheet name / configuration, string
 %         xlsxFile - (optional) Excel file, default
@@ -36,11 +36,12 @@ function ZOCconfig = funcZOCconfigurationDefinition(config, xlsxFile)
 %   Modified: 2024 February to accomodate V3 pressure taps
 %   Modified: 2026-05 SO Campaign
 %   Rewritten: made dynamic; groups, taps and modules come from Excel.
+%   Modified: November 2026 - MODULE and CHANNEL are now separate numeric columns.
 %   NOT yet run in MATLAB.
 %---------------------------------------------------------------------------
 
 if nargin < 2
-    xlsxFile = 'Pressure_tap_locations_SO_Dynamic.xlsx';
+    xlsxFile = 'Pressure tap locations_SO.xlsx';
 end
 
 ModuleOrder = [270 273 275];   % order the modules are stacked in p_mean_Pa_temp
@@ -53,7 +54,7 @@ chord = readmatrix(xlsxFile, 'Sheet', char(config), 'Range', 'B1');
 T = readtable(xlsxFile, 'Sheet', char(config), 'Range', 'A3', ...
     'VariableNamingRule', 'preserve', 'TextType', 'string');
 names = string(T.Properties.VariableNames);
-need = ["GROUP#" "X" "Y" "Z" "DESCRIPTION" "MODULE"];
+need = ["GROUP#" "X" "Y" "Z" "DESCRIPTION" "MODULE" "CHANNEL"];
 for k = 1:numel(need)
     if ~any(upper(names) == need(k))
         error('funcZOCconfigurationDefinition:header', ...
@@ -65,19 +66,19 @@ col = @(h) T.(names(upper(names) == h));
 grp  = string(col("GROUP#"));
 X    = double(col("X"));  Y = double(col("Y"));  Z = double(col("Z"));
 desc = string(col("DESCRIPTION"));
-mod  = string(col("MODULE"));
+modNum_all = double(col("MODULE"));  chNum_all = double(col("CHANNEL"));
 
 % A blank GROUP# cell under a group name belongs to that group (fill down),
-% so repeating the name on every row is optional. Rows with no MODULE entry
+% so repeating the name on every row is optional. Rows with no MODULE number
 % are treated as empty and dropped.
 for n = 2:numel(grp)
-    if (ismissing(grp(n)) || grp(n) == "") && ~(ismissing(mod(n)) || mod(n) == "")
+    if (ismissing(grp(n)) || grp(n) == "") && ~isnan(modNum_all(n))
         grp(n) = grp(n-1);
     end
 end
-keep = ~ismissing(grp) & grp ~= "" & ~ismissing(mod) & mod ~= "";
+keep = ~ismissing(grp) & grp ~= "" & ~isnan(modNum_all);
 grp = grp(keep); X = X(keep); Y = Y(keep); Z = Z(keep);
-desc = desc(keep); mod = mod(keep);
+desc = desc(keep); modNum_all = modNum_all(keep); chNum_all = chNum_all(keep);
 
 ZOCconfig.ChordMM = chord;
 [groups, ~] = unique(grp, 'stable');
@@ -88,16 +89,11 @@ for g = 1:numel(groups)
     idx = find(grp == groups(g));
     fname = matlab.lang.makeValidName(char(groups(g)), 'Prefix', 'G');
 
-    % Parse "module:channel"
-    modNum = zeros(numel(idx),1);  chNum = zeros(numel(idx),1);
-    for n = 1:numel(idx)
-        parts = string(regexp(strtrim(char(mod(idx(n)))), '[:\-_]', 'split')); % accepts 273:25, 273-25, 273_25
-        if numel(parts) ~= 2 || any(isnan(double(parts)))
-            error('funcZOCconfigurationDefinition:module', ...
-                'Group %s tap %d: MODULE "%s" is not of the form module:channel.', ...
-                groups(g), n, mod(idx(n)));
-        end
-        modNum(n) = double(parts(1));  chNum(n) = double(parts(2));
+    % Module and channel of each tap in this group (row order = tap number)
+    modNum = modNum_all(idx);  chNum = chNum_all(idx);
+    if any(isnan(chNum))
+        error('funcZOCconfigurationDefinition:channel', ...
+            'Group %s has a tap with a MODULE but no CHANNEL number.', groups(g));
     end
     mIdx = arrayfun(@(m) find(ModuleOrder == m, 1), modNum, 'UniformOutput', false);
     if any(cellfun(@isempty, mIdx)) || any(chNum < 1 | chNum > nChan)
