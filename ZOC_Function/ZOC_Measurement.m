@@ -7,7 +7,7 @@
 % modules. Then turns the tunnel on and, for each angle of attack in AoAvec
 % and each Reynolds number in ReVec, rotates the AoA slew drive, sets the
 % tunnel speed, scans the ZOC pressure modules, re-measures the speed, groups
-% the pressures by tap group (A, B, C), plots them, and saves the workspace
+% the pressures by tap group (any number of groups, from the Excel file), plots them, and saves the workspace
 % and figures. The tunnel is turned off at the end. Step 4 (comparing the
 % results to show the curves match) is not part of this script.
 %
@@ -20,6 +20,14 @@
 % so that offset drift can be judged. The 95% precision uncertainty of each
 % pressure is calculated and saved. Data are saved to the PMA_zeroFind
 % folder.
+%
+% DYNAMIC GROUPS (November 2026): the tap groups, their ports and x/c come
+% from the Excel file through funcZOCconfigurationDefinition, so any number
+% of groups can be used. The grouping, pitot lookup and plotting are in
+% blocks marked "DYNAMIC GROUPS", selected by the flag useDynamicGroups
+% (set just before the ZOC is defined). Set it to false to run the original
+% hard-coded A/B/C code, which still works when the Excel file defines
+% groups named A, B and C. The blocks can also be commented out by hand.
 %
 % INPUTS: Prompted: ice shape configuration [C, GS, GR1, GR2, GR3], AoA type
 %         (geometric/effective), ZOC configuration, temperature (deg C) and
@@ -44,8 +52,9 @@
 %                                   temperature and pressure (mmHg)
 %     funcAoAcorrection           - converts the AoA list between geometric
 %                                   and effective angle ('findKg', 'tip')
-%     funcZOCconfigurationDefinition - ZOC port groups (A, B, C) and tap x/c
-%                                   locations for the chosen CpConfig
+%     funcZOCconfigurationDefinition - ZOC port groups (any number, read from
+%                                   the Excel file) and tap x/c locations for
+%                                   the chosen CpConfig
 %     ZOC_quick_scan_2            - scans the ZOC modules (voltages, means,
 %                                   standard deviations, serial numbers);
 %                                   used once to zero and once per condition
@@ -76,6 +85,8 @@
 % HISTORY: 
 %   July 14, 2026 - troubleshooting snippet added (pressures normalized by
 %                   the pitot total pressure of each ZOC module)
+%   November 2026 - dynamic tap groups (useDynamicGroups flag; Excel-driven
+%                   groups, per-module pitot normalization, loop plotting)
 %   November 2026 - plots for both the tunnel dynamic pressure and the pitot
 %                   pressure; timer printing the time since the ZOC was
 %                   zeroed
@@ -174,6 +185,13 @@ time_per_sensor_in_a_loop = 0.1;
 no_of_loops = 5;
 
 %% Define the ZOC
+% ---- DYNAMIC GROUPS: switch ------------------------------------------------
+useDynamicGroups = true;   % true: groups from Excel. false: original A/B/C code
+% ----------------------------------------------------------------------------
+% Pitot total-pressure port (global port number) for each ZOC module. Ports are
+% stacked as [M270; M273; M275], 32 channels each. Used only by the dynamic block.
+ZOCmodules   = [270 273 275];
+pitotPort    = [31 31+32 32+64];   % M270 ch31, M273 ch31, M275 ch32
 ZOCconfig=funcZOCconfigurationDefinition(CpConfig);
 
 %% Zero the ZOC
@@ -263,6 +281,18 @@ for AoAind=1:length(AoAvec)
         PrecisionUncertaintyPa=PrecisionUncertaintyPsi*6894.75729;
         PrecisionUncertaintyPa=[PrecisionUncertaintyPa(:,1);PrecisionUncertaintyPa(:,2); PrecisionUncertaintyPa(:,3)];
         
+        if useDynamicGroups
+        % ===== DYNAMIC GROUPS: grouping START (comment out, or set flag false, to revert) =====
+        % Rearrange the measured pressure and its precision uncertainty into
+        % every tap group defined in the Excel file (one field per group).
+        GroupNames = ZOCconfig.GroupNames;
+        for g = 1:numel(GroupNames)
+            gn = GroupNames{g};
+            P_Pa.(gn).Pmean = p_mean_Pa_temp(ZOCconfig.(gn).PortID);
+            P_Pa.(gn).PrecisionUncertainty = PrecisionUncertaintyPa(ZOCconfig.(gn).PortID);
+        end
+        % ===== DYNAMIC GROUPS: grouping END =====
+        else
         P_Pa.A.Pmean=p_mean_Pa_temp(ZOCconfig.A.PortID); % Rearrange the measured pressure based on the pressure tap groups
         P_Pa.B.Pmean=p_mean_Pa_temp(ZOCconfig.B.PortID);
         P_Pa.C.Pmean=p_mean_Pa_temp(ZOCconfig.C.PortID);
@@ -270,18 +300,65 @@ for AoAind=1:length(AoAvec)
         P_Pa.B.PrecisionUncertainty=PrecisionUncertaintyPa(ZOCconfig.B.PortID);
         P_Pa.C.PrecisionUncertainty=PrecisionUncertaintyPa(ZOCconfig.C.PortID);
         
-
+        end
+        
         %% Pitot pressures - troubleshooting snippet - July 14, 2026
         
         q_270 = p_mean_Pa_temp(31); %Ptotal from pitot tube connected to channel 31 of Module 270 (C series)
         q_273 = p_mean_Pa_temp(31+32); %Ptotal from pitot tube connected to channel 31 of Module 273 (A series)
         q_275 = p_mean_Pa_temp(32+64); %Ptotal from pitot tube connected to channel 32 of Module 275 (B series)
+
+        if useDynamicGroups
+        % ===== DYNAMIC GROUPS: pitot lookup START =====
+        % Pitot total pressure seen by each tap = pitot of the module the tap
+        % is plugged into (a group can span several modules).
+        q_pitot_mod = p_mean_Pa_temp(pitotPort);          % [M270 M273 M275] (Pa)
+        for g = 1:numel(GroupNames)
+            gn = GroupNames{g};
+            [~,modIdx] = ismember(ZOCconfig.(gn).Module, ZOCmodules);
+            P_Pa.(gn).qPitot = q_pitot_mod(modIdx);        % one value per tap
+        end
+        % ===== DYNAMIC GROUPS: pitot lookup END =====
+        end
         
 
            %% Plot the data
            close all
            q=1/2*rhoAtm*Ufinal^2;   % tunnel (contraction) dynamic pressure from the measured speed
 
+           if useDynamicGroups
+           % ===== DYNAMIC GROUPS: plotting START (comment out, or set flag false, to revert) =====
+           nG = numel(GroupNames);
+           colors = lines(nG);                            % one colour per group
+           for figNum = 1:2                               % 1: tunnel q, 2: pitot
+               figure(figNum)
+               hold on
+               for g = 1:nG
+                   gn = GroupNames{g};
+                   if figNum == 1
+                       Cp_g = P_Pa.(gn).Pmean/q;                    % tunnel q
+                   else
+                       Cp_g = P_Pa.(gn).Pmean./P_Pa.(gn).qPitot;    % pitot, per tap
+                   end
+                   plot(ZOCconfig.(gn).x_c, Cp_g, '-o', 'Color', colors(g,:), ...
+                       'DisplayName', char(gn + ": " + ZOCconfig.(gn).Description));
+               end
+               hold off
+               legend('Interpreter', 'none', 'FontSize', 12, 'Location', 'best');
+               if figNum == 1
+                   title(strcat('AoA=',num2str(AoAvec(AoAind)),', Re=', num2str(ReTarget),', tunnel q'));
+                   ylabel('$p/q_{tunnel}$','Interpreter','latex');
+               else
+                   title(strcat('AoA=',num2str(AoAvec(AoAind)),', Re=', num2str(ReTarget),', pitot'));
+                   ylabel('$p/q_{pitot}$','Interpreter','latex');
+               end
+               xlabel('$x/c$','Interpreter','latex');
+               grid on;
+               set(gca,'Ydir','reverse')
+           end
+           drawnow
+           % ===== DYNAMIC GROUPS: plotting END =====
+           else
            % Figure 1: normalized by the tunnel (contraction) dynamic pressure
            figure(1)
             hold on
@@ -308,6 +385,7 @@ for AoAind=1:length(AoAvec)
             grid on;
             set(gca,'Ydir','reverse')
             drawnow
+           end
 %%      
         
         % Save the data
